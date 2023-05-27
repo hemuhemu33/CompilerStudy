@@ -1,0 +1,15 @@
+* registermap intel
+| registermap | description  |
+| rax         | 関数の戻り値 |
+| rdi         | 第一レジスタ |
+| rsi         | 第二レジスタ |
+| add x, y    | x=x+y        |
+
+
+* instruction
+** call
+- callの次の命令のアドレスをスタックにプッシュ
+- callの引数として与えられたアドレスにジャンプ
+** ret
+- stackポインタからアドレスを一つポップ
+- そのアドレスにジャンプ
