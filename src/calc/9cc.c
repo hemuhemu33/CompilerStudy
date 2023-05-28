@@ -19,7 +19,13 @@ typedef enum {
   ND_SUB,
   ND_MUL,
   ND_DIV,
-  ND_NUM
+  ND_NUM,
+  ND_EQ, // "=="
+  ND_NE, // "!="
+  ND_LT, // "<"
+  ND_LE, // "<="
+  ND_GT, // ">"
+  ND_GE, // ">="
 } NodeKind;
 
 typedef enum{
@@ -37,6 +43,7 @@ struct Node {
   int val;
 };
 
+
 Node *new_node(NodeKind kind, Node *lhs, Node *rhs){
   Node *node = calloc(1, sizeof(Node));
   node->kind = kind;
@@ -51,6 +58,10 @@ Node *new_node_num(int val) {
   node->val = val;
   return node;
 }
+
+
+
+
 
 
 void gen(Node *node) {
@@ -82,6 +93,40 @@ void gen(Node *node) {
     printf("  idiv rdi\n");
     break;
   }
+
+  case ND_EQ: {
+    printf("  cmp  rax,rdi\n");
+    printf("  sete al\n");
+    break;
+  }
+  case ND_NE: {
+    printf("  cmp   rax,rdi\n");
+    printf("  setne al\n");
+    break;
+  }
+  case ND_LT: {
+    printf("  cmp   rax,rdi\n");
+    printf("  setl  al\n");
+    break;
+  }
+  case ND_LE: {
+    printf("  cmp    rax,rdi\n");
+    printf("  setle  al\n");
+    break;
+  }
+  case ND_GT: {
+    printf("  cmp   rdi,rax\n");
+    printf("  setl  al\n");
+    break;
+  }
+  case ND_GE: {
+    printf("  cmp    rdi,rax\n");
+    printf("  setle  al\n");
+    break;
+  }
+
+
+
   default:
     break;
   }
@@ -98,6 +143,7 @@ struct Token
   Token *next;    // next Token
   int   val;      // integer
   char *str;      // token string
+  int len;
 };
 
 
@@ -130,8 +176,9 @@ void error(char *fmt, ...){
   exit(1);
 }
 
-bool consume(char op){
-  if (token->kind != TK_RESERVED || token->str[0] != op) {
+bool consume(char *op){
+  if ((token->kind != TK_RESERVED) || (strlen(op) != (unsigned int)token->len) ||
+      (memcmp(token->str, op, token->len))) {
     return false;
   }
   token = token->next;
@@ -162,20 +209,33 @@ bool at_eof(){
   return token->kind == TK_EOF;
 }
 
-Token *new_token(TokenKind kind, Token *cur, char *str){
+Token *new_token(TokenKind kind, Token *cur, char *str, int len){
   Token *tok = calloc(1, sizeof(Token));
   tok->kind = kind;
   tok->str = str;
+  tok->len = len;
   cur->next = tok;
   return tok;
 }
 
-Node *expr(){
+Node *unary(){
+  if (consume("+")) {
+    return primary();
+  }else if (consume("-")) {
+    return new_node(ND_SUB, new_node_num(0), primary());
+  }else {
+    return primary();
+  }
+  return primary();
+  
+}
+
+Node *add(){
   Node *node = mul();
   for (;;){
-    if (consume('+')) {
+    if (consume("+")) {
       node = new_node(ND_ADD, node, mul());
-    } else if (consume('-')) {
+    } else if (consume("-")) {
       node = new_node(ND_SUB, node, mul());
     } else {
       return node;
@@ -185,8 +245,47 @@ Node *expr(){
 }
 
 
+Node *relational(){
+  Node *node = add();
+  for (;;) {
+    if (consume("<")) {
+      node = new_node(ND_LT, node, add());
+    } else if(consume("<=")) {
+      node = new_node(ND_LE, node, add());      
+    } else if(consume(">")) {
+      node = new_node(ND_GT, node, add());      
+    } else if(consume(">=")){
+      node = new_node(ND_GE, node, add());      
+    } else {
+      return node;
+    }
+  }
+  return node;
+}
+
+Node *equality(){
+  Node *node = relational();
+  for (;;) {
+    if (consume("==")) {
+      node = new_node(ND_EQ, node, relational());
+    } else if (consume("!=")) {
+      node = new_node(ND_NE, node, relational());
+    } else {
+      return node;
+    }
+  }
+  return node;
+
+}
+
+Node *expr(){
+  Node *node = equality();
+  return node;
+}
+
+
 Node *primary(){
-  if (consume('(')) {
+  if (consume("(")) {
     Node *node = expr();
     expect(')');
     return node;
@@ -196,12 +295,12 @@ Node *primary(){
 
 
 Node *mul(){
-  Node *node = primary();
+  Node *node = unary();
   for (;;){
-    if (consume('*')) {
-      node = new_node(ND_MUL, node, primary());
-    } else if (consume('/')) {
-      node = new_node(ND_DIV, node, primary());
+    if (consume("*")) {
+      node = new_node(ND_MUL, node, unary());
+    } else if (consume("/")) {
+      node = new_node(ND_DIV, node, unary());
     } else {
       return node;
     }
@@ -222,20 +321,30 @@ Token *tokenize(char *p) {
       continue;
     }
 
-    if (*p == '+' || *p == '-' || *p == '*' || *p == '/' || *p == '(' || *p == ')') {
-      cur = new_token(TK_RESERVED, cur, p++);
+    if ((strncmp(p,"==",2) == 0) ||
+	(strncmp(p,"!=",2) == 0) ||
+	(strncmp(p,"<=",2) == 0) ||
+	(strncmp(p,">=",2) == 0)) {
+      cur = new_token(TK_RESERVED, cur, p,2);
+      p = p+2;
+    }
+    
+    if (*p == '+' || *p == '-' || *p == '*'
+	|| *p == '/' || *p == '(' || *p == ')'
+	|| *p == '<' || *p == '>') {
+      cur = new_token(TK_RESERVED, cur, p++,1);
       continue;
     }
 
     if (isdigit(*p)) {
-      cur = new_token(TK_NUM, cur, p);
+      cur = new_token(TK_NUM, cur, p,-1); // これは何でもいい。
       cur->val = strtol(p, &p, 10);
       continue;
     }
     error("cannot tokenize");
   }
 
-  new_token(TK_EOF, cur, p);
+  new_token(TK_EOF, cur, p,1);
   return head.next;
 }
 
