@@ -4,6 +4,8 @@
 | rdi         | 第一レジスタ |
 | rsi         | 第二レジスタ |
 | add x, y    | x=x+y        |
+| sub x, y    | x=x-y        |
+| idiv x      |              |
 
 
 * instruction
@@ -13,3 +15,9 @@
 ** ret
 - stackポインタからアドレスを一つポップ
 - そのアドレスにジャンプ
+
+* eBNF
+** part1
+expr = mul ("+" mul | "-" mul)*
+mul  = primary("*" primary | "/" primary)*
+primary = num | "(" expr ")"
