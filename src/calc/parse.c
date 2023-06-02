@@ -12,7 +12,7 @@
 Node *primary();
 Node *mul();
 Node *expr();
-
+Node *assign();
 
 
 Node *new_node(NodeKind kind, Node *lhs, Node *rhs){
@@ -20,6 +20,14 @@ Node *new_node(NodeKind kind, Node *lhs, Node *rhs){
   node->kind = kind;
   node->lhs = lhs;
   node->rhs = rhs;
+  return node;
+}
+
+Node *new_node_identify() {
+  Node *node = calloc(1, sizeof(Node));
+  node->kind = ND_LVAR;
+  node->offset = (token->str[0]-'a'+1)*8;
+  /* token=token->next; */
   return node;
 }
 
@@ -57,6 +65,17 @@ void error(char *fmt, ...){
   vfprintf(stderr, fmt, ap);
   fprintf(stderr, "\n");
   exit(1);
+}
+
+bool consume_ident(){
+  if ((token->kind == TK_IDENT)){
+    for (int i = 'a'; i <= 'z'; i++) {
+      if (token->str[i] == i) {
+	return true;
+      }
+    }
+  }
+  return false;
 }
 
 bool consume(char *op){
@@ -162,7 +181,7 @@ Node *equality(){
 }
 
 Node *expr(){
-  Node *node = equality();
+  Node *node = assign();
   return node;
 }
 
@@ -173,6 +192,12 @@ Node *primary(){
     expect(')');
     return node;
   }
+  else if(consume_ident()){
+    Node *node = new_node_identify();
+    token=token->next;
+    return node;
+  }
+
   return new_node_num(expect_number());
 }
 
@@ -191,6 +216,30 @@ Node *mul(){
   }
 }
 
+
+Node *assign(){
+  Node *node = equality();
+  if (consume("=") == true) {
+    node = new_node(ND_ASSIGN, node, assign());   }
+  return node;
+}
+
+
+Node *stmt() {
+  Node *node = expr();
+  expect(';');
+  return node;
+}
+
+Node *code[100];
+
+void program(){
+  int i = 0;
+  while(!at_eof()) {
+    code[i++] = stmt();
+  }
+  code[i] = NULL; // for dummy
+}
 
 
 Token *tokenize(char *p) {
@@ -220,8 +269,13 @@ Token *tokenize(char *p) {
     }
 
     if (isdigit(*p)) {
-      cur = new_token(TK_NUM, cur, p,-1); // これは何でもいい。
+      cur = new_token(TK_NUM, cur, p,-1); // 引数lenはこれは何でもいい。
       cur->val = strtol(p, &p, 10);
+      continue;
+    }
+
+    if ('a' <= *p && *p <= 'z') {
+      cur = new_token(TK_IDENT, cur, p++, 1);
       continue;
     }
     error("cannot tokenize");

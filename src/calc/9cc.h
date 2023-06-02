@@ -14,10 +14,14 @@ typedef enum {
   ND_LE, // "<="
   ND_GT, // ">"
   ND_GE, // ">="
+
+  ND_LVAR,    // local variable
+  ND_ASSIGN,  // =
 } NodeKind;
 
 typedef enum{
   TK_RESERVED, // identifer
+  TK_IDENT,    // identifier
   TK_NUM,      // integer token
   TK_EOF,      // token that express end of input
 } TokenKind;
@@ -29,6 +33,7 @@ struct Node {
   Node *lhs;
   Node *rhs;
   int val;
+  int offset;
 };
 
 
@@ -38,7 +43,7 @@ struct Token
   Token *next;    // next Token
   int   val;      // integer
   char *str;      // token string
-  int len;
+  int len;        // token length
 };
 
 
