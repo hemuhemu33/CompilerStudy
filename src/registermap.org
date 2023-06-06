@@ -1,20 +1,23 @@
 * registermap intel
-| registermap | description                                                           |
-| rax         | 関数の戻り値                                                          |
-| rdi         | 第一レジスタ                                                          |
-| rsi         | 第二レジスタ                                                          |
-| add x, y    | x=x+y                                                                 |
-| sub x, y    | x=x-y                                                                 |
-| idiv x      | (RAX RDX)/x 商:RAX, 余:RDX                                            |
-| cqo         | RAXに入っている64bitの値を128bitに伸ばしてRDXとRAXにセット            |
-| cmp x,y     | xとyを比較してフラグレジスタを更新する                                |
-| sete x      | 前回のcmpが同じだった場合、xに1をセット、異なっている場合xに0をセット |
-| AL          | RAXの下位8ビットを指す別名のレジスタ                                  |
-| movzb x,y   | xレジスタにyレジスタの値をコピーする。バス幅が異る場合は、0クリアする |
-| setl        | seteの"<"版                                                           |
-| setle       | seteの"<="版                                                          |
-| setne       | seteの"!="版                                                          |
-|             |                                                                       |
+| registermap | description                                                                                                      |
+| rax         | 関数の戻り値                                                                                                     |
+| rdi         | 第一レジスタ                                                                                                     |
+| rsi         | 第二レジスタ                                                                                                     |
+| add x, y    | x=x+y                                                                                                            |
+| sub x, y    | x=x-y                                                                                                            |
+| idiv x      | (RAX RDX)/x 商:RAX, 余:RDX                                                                                       |
+| cqo         | RAXに入っている64bitの値を128bitに伸ばしてRDXとRAXにセット                                                       |
+| cmp x,y     | xとyを比較してフラグレジスタを更新する                                                                           |
+| sete x      | 前回のcmpが同じだった場合、xに1をセット、異なっている場合xに0をセット                                            |
+| AL          | RAXの下位8ビットを指す別名のレジスタ                                                                             |
+| movzb x,y   | xレジスタにyレジスタの値をコピーする。バス幅が異る場合は、0クリアする                                            |
+| setl        | seteの"<"版                                                                                                      |
+| setle       | seteの"<="版                                                                                                     |
+| setne       | seteの"!="版                                                                                                     |
+| push x      | xをRSPが指しているメモリのアドレス番地にpushする                                                                 |
+| pop  x      | RSPが指しているメモリのアドレス番地から値をXにpopする                                                            |
+| mov dst src | srcにかかれている値(register or memory)をdstにコピーする。src or dstが[]で囲われている場合は、メモリの番地を示す |
+|             |                                                                                                                  |
 
 
 * instruction
@@ -48,6 +51,17 @@ primary    = num | "(" expr ")"
 ** part8
 program    = stmt*  (EOF)
 stmt       = expr ";"
+expr       = assign
+assign     = equality ("=" assign)?
+equality   = relational ("==" relational | "!=" relational)*
+relational = add ("<" add | "<=" add | ">" add | ">=" add)*
+add        = mul ("+" mul | "-" mul)*
+mul        = unary ("*" unary | "/" unary)*
+unary      = ("+" | "-")? primary
+primary    = num | ident | "(" expr ")"
+** part9
+program    = stmt*  (EOF)
+stmt       = expr ";" | "return" expr ";"
 expr       = assign
 assign     = equality ("=" assign)?
 equality   = relational ("==" relational | "!=" relational)*
