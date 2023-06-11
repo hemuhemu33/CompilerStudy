@@ -30,12 +30,20 @@ typedef enum {
 
   ND_LVAR,    // local variable
   ND_ASSIGN,  // =
-  ND_RETURN, 
+  ND_RETURN,
+  
+  ND_IF,
+  ND_FOR,
+  ND_WHILE,
 } NodeKind;
 
 typedef enum{
   TK_RESERVED, // identifer
   TK_RETURN,   // return
+  TK_IF,       // if
+  TK_ELSE,
+  TK_FOR,      // for
+  TK_WHILE,    // while
   TK_IDENT,    // identifier
   TK_NUM,      // integer token
   TK_EOF,      // token that express end of input
@@ -49,6 +57,12 @@ struct Node {
   Node *rhs;
   int val;
   int offset;
+  Node *cond;
+  Node *initial;
+  Node *exitcond;
+  Node *loop;
+  Node *then;
+  Node *els;
 };
 
 
@@ -60,7 +74,7 @@ struct Token
   char *str;      // token string
   int len;        // token length
 };
-
+extern unsigned int Lend_number;
 #define CODE_COLUMN 100
 
 extern char *user_input;

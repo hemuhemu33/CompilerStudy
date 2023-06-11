@@ -289,14 +289,70 @@ Node *stmt() {
   if (TK_RETURN == token->kind) {
     node = calloc(1, sizeof(Node));
     node->kind = ND_RETURN;
+    token = token->next;
     node->lhs = expr();
+    expect(';');
+  }
+  else if(TK_IF == token->kind) {
+    node = calloc(1, sizeof(Node));
+    node->kind = ND_IF;
+    token = token->next;
+    expect('(');
+    node->cond = expr();
+    expect(')');
+    node->then = stmt();
+    if (TK_ELSE == token->kind) {
+      token = token->next;
+      node->els = stmt();
+    }
+  }
+  else if(TK_WHILE == token->kind) {
+    node = calloc(1, sizeof(Node));
+    node->kind = ND_WHILE;
+    
+    token = token->next;
+    expect('(');
+    node->cond = expr();
+    expect(')');
+    node->then = stmt();
+  }
+  else if(TK_FOR == token->kind) {
+    node = calloc(1, sizeof(Node));
+    node->kind = ND_FOR;
+
+    token = token->next;
+    expect('(');
+    if ((token->next->kind == TK_RESERVED) && (token->next->str[0] == ';')) {
+      //なにもしない.次読み出し
+    }
+    else {
+      node->initial =  expr();
+    }
+    expect(';');
+    if ((token->next->kind == TK_RESERVED) && (token->next->str[0] == ';')) {
+      //なにもしない.次読み出し
+    }
+    else {
+      node->exitcond =  expr();
+    }
+    expect(';');
+    if ((token->next->kind == TK_RESERVED) && (token->next->str[0] == ';')) {
+      //なにもしない.次読み出し
+    }
+    else {
+      node->loop =  expr();
+    }
+    expect(')');
+
+    node->then = stmt();
   }
   else {
     node = expr();
+    expect(';');
   }
   
   /* Node *node = expr(); */
-  expect(';');
+
   return node;
 }
 
@@ -325,6 +381,33 @@ Token *tokenize(char *p) {
       continue;
     }
 
+
+
+    if ((strncmp(p, "if", strlen("if")) == 0) && is_alnum(p[strlen("if")]) == false) {
+      cur = new_token(TK_IF, cur, p,strlen("if"));
+      p = p+strlen("if");
+      continue;
+    }
+    if ((strncmp(p, "while", strlen("while")) == 0)  && is_alnum(p[strlen("while")]) == false) {
+      cur = new_token(TK_WHILE, cur, p,strlen("while"));
+      p = p+strlen("while");
+      continue;
+    }
+    if ((strncmp(p, "for", strlen("for")) == 0) && is_alnum(p[strlen("for")]) == false) {
+      /* printf("aiueo\n"); */
+      cur = new_token(TK_FOR, cur, p,strlen("for"));
+      p = p+strlen("for");
+      continue;
+    }
+    if ((strncmp(p, "else", strlen("else")) == 0) && is_alnum(p[strlen("else")]) == false) {
+      /* printf("aiueo\n"); */
+      cur = new_token(TK_ELSE, cur, p,strlen("else"));
+      p = p+strlen("else");
+      continue;
+    }
+
+    
+    
     if ((strncmp(p,"==",2) == 0) ||
 	(strncmp(p,"!=",2) == 0) ||
 	(strncmp(p,"<=",2) == 0) ||
@@ -351,7 +434,7 @@ Token *tokenize(char *p) {
     /*                            returnの呼び出し                          */
     /*************************************************************************/
     // returnという文字列が有効であることを確認
-    if ((strncmp(p, "return",6) == 0) && is_alnum(p[6])) {
+    if ((strncmp(p, "return",6) == 0) && is_alnum(p[6]) == false) {
       /* tokens[i]. */
       cur = new_token(TK_RETURN, cur, p, strlen("return"));
       p = p + 6;
@@ -362,8 +445,10 @@ Token *tokenize(char *p) {
     
     /*************************************************************************/
     /*                            識別子の読み取り                          */
+    /*                            今はa-zのみ                              */
     /*************************************************************************/
     int chLength = 0;
+
 
     for (char *start = p; start != NULL; start++) {
       if ('a' <= *start && *start <= 'z') {

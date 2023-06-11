@@ -3,12 +3,15 @@
 #include <string.h>
 #include "9cc.h"
 
+unsigned int Lend_number = 0;
+
 void init(){
   locals = calloc(1, sizeof(LVar));
   locals->offset = 0;
   locals->len = 0;
   locals->name = "";
   locals->next = NULL;
+  Lend_number = 0;
 }
 
 int main(int argc, char *argv[])
@@ -48,12 +51,12 @@ int main(int argc, char *argv[])
     gen(code[i]);
 
     // 最終評価結果がメモリに残っているため、取り出す
-    printf("  pop rax \n");
+    /* printf("  pop rax \n"); */
   }
 
-  printf("  mov rsp, rbp\n");
-  printf("  pop rbp\n");
-  printf("  ret\n");
+  /* printf("  mov rsp, rbp\n"); */
+  /* printf("  pop rbp\n"); */
+  /* printf("  ret\n"); */
   return 0;
 }
 

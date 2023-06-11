@@ -19,7 +19,6 @@
 | mov dst src | srcにかかれている値(register or memory)をdstにコピーする。src or dstが[]で囲われている場合は、メモリの番地を示す |
 |             |                                                                                                                  |
 
-
 * instruction
 ** call
 - callの次の命令のアドレスをスタックにプッシュ
@@ -29,6 +28,13 @@
 - そのアドレスにジャンプ
 
 * eBNF
+** 拡張BNF
+| 書き方 | 意味                 |
+| A*     | Aの0回以上の繰り返し |
+| A?     | A又はε              |
+| AlB    | A又はB               |
+| (..)   | Group化              |
+
 ** part1
 expr = mul ("+" mul | "-" mul)*
 mul  = primary("*" primary | "/" primary)*
@@ -70,3 +76,19 @@ add        = mul ("+" mul | "-" mul)*
 mul        = unary ("*" unary | "/" unary)*
 unary      = ("+" | "-")? primary
 primary    = num | ident | "(" expr ")"
+** part12
+program    = stmt*  (EOF)
+stmt       = expr ";" | 
+             "if" "(" expr ")" stmt ("else" stmt)?  |
+            "while" "(" expr ")" stmt               |
+            "for" "(" expr? ";" expr? ";" expr? ")" stmt  | 
+             "return" expr ";"
+expr       = assign
+assign     = equality ("=" assign)?
+equality   = relational ("==" relational | "!=" relational)*
+relational = add ("<" add | "<=" add | ">" add | ">=" add)*
+add        = mul ("+" mul | "-" mul)*
+mul        = unary ("*" unary | "/" unary)*
+unary      = ("+" | "-")? primary
+primary    = num | ident | "(" expr ")"
+

@@ -18,7 +18,7 @@ void gen(Node *node) {
   case ND_RETURN: {
     gen(node->lhs);
     printf("  pop rax\n");
-    printf("  mov rsp rbp\n");
+    printf("  mov rsp, rbp\n");
     printf("  pop rbp\n");
     printf("  ret\n");
     return;
@@ -45,6 +45,57 @@ void gen(Node *node) {
     
     return;
   }
+  case ND_IF: {
+    unsigned int lLabel_if = Lend_number++;
+    unsigned int lLabel_else = Lend_number++;
+    gen(node->cond);
+    printf("  pop rax\n");
+    printf("  cmp rax, 0\n");
+    if (node->els==NULL) {
+      printf("  je  .Label%u\n", lLabel_if);
+      gen(node->then);
+      printf(".Label%u:\n", lLabel_if);
+    }
+    else {
+      printf("  je .Label%u\n", lLabel_if);
+      gen(node->then);
+      printf("  jmp .Label%u\n", lLabel_else);
+      printf(".Label%u:\n", lLabel_if);
+      gen(node->els);
+      printf(".Label%u:\n", lLabel_else);
+    }
+    return;
+  }
+  case ND_WHILE: {
+    unsigned int lLabel_begin = Lend_number++;
+    unsigned int lLabel_end   = Lend_number++;
+
+    printf(".Label%u:\n", lLabel_begin);
+    gen(node->cond);
+    printf("  pop rax\n");
+    printf("  cmp rax,0\n");
+    printf("  je .Label%u\n", lLabel_end);
+    gen(node->then);
+    printf("  jmp .Label%u\n", lLabel_begin);
+    printf(".Label%u:\n", lLabel_end);
+    return;
+  }
+  case ND_FOR: {
+    unsigned int lLabel_begin = Lend_number++;
+    unsigned int lLabel_end   = Lend_number++;
+    gen(node->initial);
+    printf(".Label%u:\n", lLabel_begin);
+    gen(node->exitcond);
+    printf("  pop rax\n");
+    printf("  cmp rax, 0\n");
+    printf("  je  .Label%u\n", lLabel_end);
+    gen(node->then);
+    gen(node->loop);
+    printf("  jmp .Label%u\n", lLabel_begin);
+    printf(".Label%u:\n", lLabel_end);
+    return;
+  }
+    
   default:
     // なにもしない
     break;
@@ -86,30 +137,35 @@ void gen(Node *node) {
   }
   case ND_NE: {
     printf("  cmp   rax,rdi\n");
-    printf("  setne al\n");
+    printf("  setne al\n");       //
+    printf("  movzb rax,al\n");
     break;
   }
   case ND_LT: {
     printf("  cmp   rax,rdi\n");
     printf("  setl  al\n");
+    printf("  movzb rax,al\n");
     break;
   }
   case ND_LE: {
     printf("  cmp    rax,rdi\n");
     printf("  setle  al\n");
+    printf("  movzb rax,al\n");
     break;
   }
   case ND_GT: {
     printf("  cmp   rdi,rax\n");
     printf("  setl  al\n");
+    printf("  movzb rax,al\n");
     break;
   }
   case ND_GE: {
     printf("  cmp    rdi,rax\n");
     printf("  setle  al\n");
+    printf("  movzb rax,al\n");
     break;
   }
-
+    
 
 
   default:
