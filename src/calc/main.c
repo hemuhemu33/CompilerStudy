@@ -25,6 +25,16 @@ int main(int argc, char *argv[])
   user_input = argv[1];  
   token = tokenize(argv[1]);
 
+  /***************************************************************************/
+  /*                                  debug                                  */
+  /***************************************************************************/
+  /* Token *head = token; */
+  /* for (; head!=NULL; head = head->next) { */
+  /*   printf("token info = %d, %c, %d,%d\n",head->kind, head->str[0], head->len, head->val); */
+  /* } */
+
+  
+
   program();
   printf(".intel_syntax noprefix\n");
   printf(".globl main\n");

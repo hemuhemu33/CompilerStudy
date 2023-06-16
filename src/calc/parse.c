@@ -286,12 +286,27 @@ Node *assign(){
 
 Node *stmt() {
   Node *node = NULL;
+  /* printf("token info = %d, %c, %d,%d\n",token->kind, token->str[0], token->len, token->val); */
   if (TK_RETURN == token->kind) {
     node = calloc(1, sizeof(Node));
     node->kind = ND_RETURN;
     token = token->next;
     node->lhs = expr();
     expect(';');
+  }
+  else if(consume("{")){
+    node = calloc(1, sizeof(Node));
+    node->kind = ND_BLOCK;
+    /* token = token->next; */
+    Node *ptr = node;
+    /* printf("%c\n",token->str[0]); */
+
+    while (consume("}") == false) {
+
+      ptr->block_next = stmt();
+      ptr = ptr->block_next;
+    }
+    ptr = NULL;
   }
   else if(TK_IF == token->kind) {
     node = calloc(1, sizeof(Node));
@@ -347,6 +362,7 @@ Node *stmt() {
     node->then = stmt();
   }
   else {
+
     node = expr();
     expect(';');
   }
@@ -419,7 +435,7 @@ Token *tokenize(char *p) {
     if (*p == '+' || *p == '-' || *p == '*'
 	|| *p == '/' || *p == '(' || *p == ')'
 	|| *p == '<' || *p == '>' || *p == '='
-	|| *p == ';') {
+	|| *p == ';' || *p == '{' || *p == '}') {
       cur = new_token(TK_RESERVED, cur, p++,1);
       continue;
     }

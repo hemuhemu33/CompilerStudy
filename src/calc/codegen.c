@@ -95,7 +95,14 @@ void gen(Node *node) {
     printf(".Label%u:\n", lLabel_end);
     return;
   }
-    
+  case ND_BLOCK: {
+    Node *ptr = node->block_next;
+    while (ptr != NULL) {
+      gen(ptr);
+      ptr = ptr->block_next;
+    }
+    return;
+  }
   default:
     // なにもしない
     break;

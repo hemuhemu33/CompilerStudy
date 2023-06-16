@@ -44,7 +44,10 @@ assert 10 "b=0;foo=0;if(foo==1)a=0;else b=10;return b;"
 assert 50 "b=0;while(b<50)b=b+10;return b;"
 assert 60 "b=0;while(b<=50)b=b+10;return b;"
 assert 55 "b=0;for(a=0;a<=10;a=a+1)b=b+5;return b;"
-assert 255 "b=0;for(a=0;a<=256;a=a+1)b=b+1;return b;" # 8bitまでしか出力できない？
+assert 255 "b=0;for(a=0;a<=254;a=a+1)b=b+1;return b;" # 8bitまでしか出力できない？
+assert 255 "b=0;for(a=0;a<=254;a=a+1){b=b+1;}return b;" # 8bitまでしか出力できない？
+assert 0 "{return 0;}"
+assert 160 "b=0;c=0;for(a=0;a<=15;a=a+1){b=b+1;c=c+10;}return c;" # 8bitまでしか出力できない？
 
 
 echo OK
